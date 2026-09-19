@@ -1,4 +1,4 @@
-from fastapi import FastAPI, HTTPException, status, Depends
+from fastapi import FastAPI, HTTPException, status, Depends, Path, Query
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from pydantic import BaseModel, EmailStr, Field
 from typing import List
@@ -106,14 +106,14 @@ def get_all_employees(current_user: dict = Depends(get_current_user)):
     return db_employees
 
 @app.get("/employees/{emp_id}", response_model=EmployeeResponse, tags=["GET"])
-def get_employee_by_id(emp_id: int = Field(..., ge=1), current_user: dict = Depends(get_current_user)):
+def get_employee_by_id(emp_id: int = Path(..., ge=1), current_user: dict = Depends(get_current_user)):
     emp = next((e for e in db_employees if e["id"] == emp_id), None)
     if not emp:
         raise HTTPException(status_code=404, detail="Employee not found")
     return emp
 
 @app.get("/departments/{dept_id}/employees", response_model=List[EmployeeResponse], tags=["GET"])
-def get_employees_by_department(dept_id: int = Field(..., ge=1, le=999), current_user: dict = Depends(get_current_user)):
+def get_employees_by_department(dept_id: int = Path(..., ge=1, le=999), current_user: dict = Depends(get_current_user)):
     return [e for e in db_employees if e["department_id"] == dept_id]
 
 # ==========================================
@@ -136,7 +136,7 @@ def create_department(dept: DepartmentCreate, current_user: dict = Depends(get_c
     return new_dept
 
 @app.post("/employees/{emp_id}/notes", tags=["POST"])
-def add_employee_note(emp_id: int = Field(..., ge=1), note: str = Field(..., min_length=1), current_user: dict = Depends(get_current_user)):
+def add_employee_note(emp_id: int = Path(..., ge=1), note: str = Query(..., min_length=1), current_user: dict = Depends(get_current_user)):
     emp = next((e for e in db_employees if e["id"] == emp_id), None)
     if not emp:
         raise HTTPException(status_code=404, detail="Employee not found")
@@ -146,7 +146,7 @@ def add_employee_note(emp_id: int = Field(..., ge=1), note: str = Field(..., min
 # 3. DELETE Endpoints
 # ==========================================
 @app.delete("/employees/{emp_id}", status_code=status.HTTP_204_NO_CONTENT, tags=["DELETE"])
-def delete_employee(emp_id: int = Field(..., ge=1), current_user: dict = Depends(get_current_user)):
+def delete_employee(emp_id: int = Path(..., ge=1), current_user: dict = Depends(get_current_user)):
     global db_employees
     initial_length = len(db_employees)
     db_employees = [e for e in db_employees if e["id"] != emp_id]
@@ -154,7 +154,7 @@ def delete_employee(emp_id: int = Field(..., ge=1), current_user: dict = Depends
         raise HTTPException(status_code=404, detail="Employee not found")
 
 @app.delete("/departments/{dept_id}", status_code=status.HTTP_204_NO_CONTENT, tags=["DELETE"])
-def delete_department(dept_id: int = Field(..., ge=1, le=999), current_user: dict = Depends(get_current_user)):
+def delete_department(dept_id: int = Path(..., ge=1, le=999), current_user: dict = Depends(get_current_user)):
     global db_departments
     initial_length = len(db_departments)
     db_departments = [d for d in db_departments if d["id"] != dept_id]
@@ -162,7 +162,7 @@ def delete_department(dept_id: int = Field(..., ge=1, le=999), current_user: dic
         raise HTTPException(status_code=404, detail="Department not found")
 
 @app.delete("/employees/{emp_id}/photo", status_code=status.HTTP_204_NO_CONTENT, tags=["DELETE"])
-def delete_employee_photo(emp_id: int = Field(..., ge=1), current_user: dict = Depends(get_current_user)):
+def delete_employee_photo(emp_id: int = Path(..., ge=1), current_user: dict = Depends(get_current_user)):
     emp = next((e for e in db_employees if e["id"] == emp_id), None)
     if not emp:
         raise HTTPException(status_code=404, detail="Employee not found")
